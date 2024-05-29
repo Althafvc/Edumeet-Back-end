@@ -6,19 +6,31 @@ exports.defaultRoute = async (req, res) => {
     const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)(?!.* ).{8,16}$/;
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
 
-         if (!passwordRegex.test(password)) {
-            return res.status(400).json({ success: false, message: "Invalid password format" });
-        } else if (!emailRegex.test(email)) {
-            return res.status(400).json({ success: false, message: "Invalid email address"});
-        }else {
-            const salting = await bcrypt.genSalt(10)
-            const hashedPassword = await bcrypt.hash(password, salting)
-            const newSchema = new studentModel({
-                name, email, phone, qualification,
-                password:hashedPassword
-            })
-            await newSchema.save()
-            return res.status(200).json({success:true})
-        }
-  
+    if (name.trim() == '' || email.trim() == '' || phone.trim() == '' || qualification.trim() == '' || password.trim() == '' || confirmpassword.trim() == '') {
+        return res.status(400).json({ success: false, message: 'All fields are mandatory' })
+    }
+
+    else if (name.length <= 2) {
+        return res.status(400).json({ success: false, message: 'name should be more than two characters' })
+
+    } else if (phone.length != 10) {
+        return res.status(400).json({ success: false, message: 'only ten digits are allowed' })
+
+    }
+
+    else if (!passwordRegex.test(password)) {
+        return res.status(400).json({ success: false, message: "Invalid password format" });
+    } else if (!emailRegex.test(email)) {
+        return res.status(400).json({ success: false, message: "Invalid email address" });
+    } else {
+        const salting = await bcrypt.genSalt(10)
+        const hashedPassword = await bcrypt.hash(password, salting)
+        const newSchema = new studentModel({
+            name, email, phone, qualification,
+            password: hashedPassword
+        })
+        await newSchema.save()
+        return res.status(200).json({ success: true })
+    }
+
 };
