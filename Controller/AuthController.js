@@ -11,6 +11,7 @@ let givenOtp = ''
 // Student Signup Function
 exports.studentSignup = async (req, res) => {
     // Extract fields from the request body
+    console.log(req.body);
     const { name, email, phone, qualification, password, confirmpassword } = req.body;
 
     // Define regex patterns for password and email validation
@@ -105,10 +106,11 @@ exports.teacherSignup = async (req, res) => {
             password: hashedPassword
         });
 
+        givenOtp = mailOtp.otp
+        otpMailer(givenOtp, email)
+
         // Save the teacher document to the database
         await newSchema.save();
-
-
 
         // Respond with success status
         return res.status(200).json({ success: true });
@@ -155,14 +157,17 @@ exports.studentLogin = async (req, res) => {
 // Controller function to handle OTP verification for student
 exports.studentOtp = async (req, res) => {
     // Extract OTP and email from request body
-    const { otp, email } = req.body;
+    const { otp, email,role } = req.body;
 
     // Combine OTP array into a single string and trim any whitespace
     const receivedOtp = otp.join('').trim();
     const actualOtp = givenOtp.toString().trim(); // Assuming `givenOtp` is defined elsewhere
 
     try {
-        // Find student by email
+
+        if (role=='student') {
+
+            // Find student by email
         const student = await studentModel.findOne({ email });
 
         // Check if student exists
@@ -186,6 +191,33 @@ exports.studentOtp = async (req, res) => {
                 return res.status(500).json({ msg: 'Server error' });
             }
         }
+        } else {
+            // Find teacher by email
+        const teacher = await teacherDataModel.findOne({ email });
+
+        // Check if teacher exists
+        if (!teacher) {
+            return res.status(401).json({ msg: 'User not found' });
+
+        // Check if received OTP matches the actual OTP
+        } else if (receivedOtp !== actualOtp) {
+            return res.status(400).json({ msg: 'Invalid OTP' });
+
+        } else {
+            try {
+                // Update teacher record to set `verified` to true
+                await teacherDataModel.updateOne({ email }, { $set: { verified: true } });
+
+                // Return success response
+                return res.status(200).json({ msg: 'OTP verified successfully' });
+            } catch (err) {
+                // Log error and return server error response if update fails
+                console.log(err, 'Verified field update failed');
+                return res.status(500).json({ msg: 'Server error' });
+            }
+        }
+        }
+        
     } catch (err) {
         // Log error and return server error response if email lookup fails
         console.log(err, 'Email lookup failed');
