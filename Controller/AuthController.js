@@ -11,7 +11,6 @@ let givenOtp = ''
 // Student Signup Function
 exports.studentSignup = async (req, res) => {
     // Extract fields from the request body
-    console.log(req.body);
     const { name, email, phone, qualification, password, confirmpassword } = req.body;
 
     // Define regex patterns for password and email validation
@@ -221,7 +220,7 @@ exports.studentOtp = async (req, res) => {
     } catch (err) {
         // Log error and return server error response if email lookup fails
         console.log(err, 'Email lookup failed');
-        return res.status(500).json({ msg: 'Server error' });
+        return res.status(500).json({ msg: 'Server error'});
     }
 };
 
