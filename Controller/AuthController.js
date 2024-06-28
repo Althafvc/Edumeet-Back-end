@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
 const mailOtp = require('./Middlewares/mailotp')
 const otpMailer = require('../Utilities/otpmailer')
-// Import student and teacher models
 const studentModel = require('../Models/studentDetails');
 const teacherDataModel = require('../Models/teacherDetails');
 let givenOtp = ''
@@ -12,22 +11,25 @@ let givenOtp = ''
 exports.studentSignup = async (req, res) => {
     // Extract fields from the request body
     const { name, email, phone, qualification, password, confirmpassword } = req.body;
-
+    
     // Define regex patterns for password and email validation
     const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)(?!.* ).{8,16}$/;
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    const mobileRegex = /^[6-9]\d{9}$/;
+
 
     // Check if any field is empty
-    if (name.trim() == '' || email.trim() == '' || phone.trim() == '' || qualification.trim() == '' || password.trim() == '' || confirmpassword.trim() == '') {
+    if (name.trim() == '' || email.trim() == '' || qualification.trim() == '' || password.trim() == '' || confirmpassword.trim() == '') {
         return res.status(400).json({ success: false, message: 'All fields are mandatory' });
     }
 
     // Check if name is more than two characters
-    else if (name.length <= 2) {
+         if (name.length <= 2) {
         return res.status(400).json({ success: false, message: 'Name should be more than two characters' });
 
         // Check if phone number is exactly 10 digits
-    } else if (phone.length != 10) {
+    } else if (!mobileRegex.test(phone)) {
+        
         return res.status(400).json({ success: false, message: 'Phone number must be ten digits' });
 
         // Validate password against the regex pattern
@@ -65,13 +67,13 @@ exports.studentSignup = async (req, res) => {
 exports.teacherSignup = async (req, res) => {
     // Extract fields from the request body
     const { name, email, phone, qualification, password, confirmpassword } = req.body;
-
+  console.log(req.body);
     // Define regex patterns for password and email validation
     const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)(?!.* ).{8,16}$/;
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
 
     // Check if any field is empty
-    if (name.trim() == '' || email.trim() == '' || phone.trim() == '' || qualification.trim() == '' || password.trim() == '' || confirmpassword.trim() == '') {
+    if (name.trim()== '' || email.trim()== '' || phone.trim()== '' || qualification.trim() == '' || password.trim() == '' || confirmpassword.trim() == '') {
         return res.status(400).json({ success: false, message: 'All fields are mandatory' });
     }
 
@@ -81,6 +83,7 @@ exports.teacherSignup = async (req, res) => {
 
         // Check if phone number is exactly 10 digits
     } else if (phone.length != 10) {
+        console.log('yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy');
         return res.status(400).json({ success: false, message: 'Phone number must be ten digits' });
 
         // Validate password against the regex pattern

@@ -60,13 +60,13 @@ const nodemailer = require('nodemailer')
             </head>
             <body>
                 <div class="container">
-                    <h1>Welcome to TeamSync!</h1>
+                    <h1>Welcome to Edumeet!</h1>
                     <p>Dear User,</p>
-                    <p>We are delighted to welcome you to TeamSync, the all in one collaboration platform.</p>
+                    <p>We are delighted to welcome you to Edumeet, the next level learning platform.</p>
                     <p>To complete your registration, please use the OTP provided below:</p>
                     <p class="otp">${otp}</p>
                     <p>If you have any questions or need assistance, feel free to contact us.</p>
-                    <p>Best Regards,<br/>The TeamSync Team</p>
+                    <p>Best Regards,<br/>The Edumeet Team</p>
                 </div>
             </body>
             </html>`
