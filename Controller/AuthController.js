@@ -227,3 +227,55 @@ exports.studentOtp = async (req, res) => {
     }
 };
 
+
+exports.adminLogin = (req, res) => {
+    // Extract email and secretkey from the request body
+    const { email, secretkey } = req.body;
+
+    // Regular expressions for validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    const secretkeyRegex = /^\d{4}$/;
+
+    try {
+        // Check if the email is empty after trimming whitespace
+        if (email.trim() === '') {
+            return res.status(400).json({ success: false, message: 'Email is mandatory' });
+        }
+
+        // Check if the secretkey is empty after trimming whitespace
+        else if (secretkey.trim() === '') {
+            return res.status(400).json({ success: false, message: 'Secretkey is mandatory' });
+        }
+
+        // Validate the email format
+        else if (!emailRegex.test(email.trim())) {
+            return res.status(400).json({ success: false, message: 'Invalid email format' });
+        }
+
+        // Validate the secretkey format (must be 4 digits)
+        else if (!secretkeyRegex.test(secretkey.trim())) {
+            return res.status(400).json({ success: false, message: 'Secretkey must be 4 digits long' });
+        }
+
+        // Check if the email matches the stored admin email
+        else if (email.trim() !== process.env.adminemail) {
+            return res.status(400).json({ success: false, message: 'You have entered the incorrect email' });
+        }
+
+        // Check if the secretkey matches the stored secret key
+        else if (secretkey.trim() !== process.env.secretkey) {
+            console.log('Incorrect secret key');
+            return res.status(400).json({ success: false, message: 'You have entered the incorrect secretkey' });
+        }
+
+        // If all validations pass, respond with success
+        else {
+            res.status(200).json({ success: true, message: 'Logged in successfully' });
+        }
+    } catch (err) {
+        // Handle any server errors
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+

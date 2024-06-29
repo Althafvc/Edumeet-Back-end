@@ -8,12 +8,14 @@ const port = process.env.port|| 3000
 
 const studentRouter = require('./Router/student')
 const teacherRouter = require('./Router/teacher')
+const adminRouter = require('./Router/admin')
 app.use(express.urlencoded({ extended: true }))
 app.use(cors())
 app.use(express.json())
 app.use(express.static('public'))
 app.use('/student',studentRouter)
-app.use('/api/teacher',teacherRouter)
+app.use('/teacher',teacherRouter)
+app.use('/admin',adminRouter)
 
 
 mongoose.connect('mongodb://0.0.0.0:27017/edumeet')
