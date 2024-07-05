@@ -21,6 +21,11 @@ const schema = {
         type: String,
         required: true
     },
+    role: {
+        type:String,
+        default:'student'
+    },
+
     verified: {
         type: Boolean,
         default: false

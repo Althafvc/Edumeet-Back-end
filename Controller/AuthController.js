@@ -1,6 +1,5 @@
 const bcrypt = require('bcrypt'); // Import bcrypt library for password hashing
 const jwt = require('jsonwebtoken')
-const nodemailer = require('nodemailer')
 const mailOtp = require('./Middlewares/mailotp')
 const otpMailer = require('../Utilities/otpmailer')
 const studentModel = require('../Models/studentDetails');
@@ -10,13 +9,12 @@ let givenOtp = ''
 // Student Signup Function
 exports.studentSignup = async (req, res) => {
     // Extract fields from the request body
-    const { name, email, phone, qualification, password, confirmpassword } = req.body;
+    const { name, email, phone, qualification, password, confirmpassword, role} = req.body;
     
     // Define regex patterns for password and email validation
     const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)(?!.* ).{8,16}$/;
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
     const mobileRegex = /^[6-9]\d{9}$/;
-
 
     // Check if any field is empty
     if (name.trim() == '' || email.trim() == '' || qualification.trim() == '' || password.trim() == '' || confirmpassword.trim() == '') {
@@ -51,7 +49,7 @@ exports.studentSignup = async (req, res) => {
         // Create a new student document using the student model
         const newSchema = new studentModel({
             name, email, phone, qualification,
-            password: hashedPassword
+            password: hashedPassword,role
         });
 
         // Save the student document to the database
@@ -67,7 +65,6 @@ exports.studentSignup = async (req, res) => {
 exports.teacherSignup = async (req, res) => {
     // Extract fields from the request body
     const { name, email, phone, qualification, password, confirmpassword } = req.body;
-  console.log(req.body);
     // Define regex patterns for password and email validation
     const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)(?!.* ).{8,16}$/;
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
@@ -83,7 +80,6 @@ exports.teacherSignup = async (req, res) => {
 
         // Check if phone number is exactly 10 digits
     } else if (phone.length != 10) {
-        console.log('yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy');
         return res.status(400).json({ success: false, message: 'Phone number must be ten digits' });
 
         // Validate password against the regex pattern
@@ -130,12 +126,18 @@ exports.studentLogin = async (req, res) => {
         // If student is not found, respond with an error
         if (!studentDatas) {
             return res.status(400).json({ message: 'User not found' });
-        } else {
+        } else if(email.trim()=='' || password.trim()=='') {
+            return res.status(400).json({ message: 'All fields are mandatory' });
+
+        }
+        
+        else {
             // Compare the provided password with the stored hashed password
             const passwordMatch = await bcrypt.compare(password, studentDatas.password);
 
             // If passwords do not match, respond with an error
             if (!passwordMatch) {
+                console.log('here');
                 return res.status(400).json({ message: "Incorrect password" });
             } else {
                 const payload = {
@@ -270,12 +272,146 @@ exports.adminLogin = (req, res) => {
 
         // If all validations pass, respond with success
         else {
-            res.status(200).json({ success: true, message: 'Logged in successfully' });
+           return res.status(200).json({ success: true, message: 'Logged in successfully' });
         }
     } catch (err) {
         // Handle any server errors
-        res.status(500).json({ success: false, message: 'Server error' });
+       return  res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+
+exports.teacherLogin = (req,res) => {
+    const {email, password} = req.body
+
+    if(email.trim()=='' || password.trim()=='') {
+        res.status(400).json({ success: false, message: 'All fields are mandatory' });
+
+    }else {
+        console.log('Done');
+    }
+
+}
+
+exports.verifyEmail = async (req,res)=> {
+    const emailRegex =/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    const {email} = req.body
+    const {role}= req.query
+ 
+        try {
+
+            if(email.trim()==='') {
+              return  res.status(400).json({success:false, message:'Plaese enter your email'})
+
+            }else if(!emailRegex.test(email)) {
+                return  res.status(400).json({success:false, message:'Invalid email format'})
+
+            }else {
+                if(role=='student') {
+                    const student = await studentModel.findOne({email})
+                    if(!student) {
+                        return  res.status(400).json({success:false, message:'userdetails not found'})
+
+                    }else {
+                        givenOtp = mailOtp.otp
+                        otpMailer(givenOtp, email)
+                        return res.status(200).json({ success: true, message:'Email verified successfully', email,role});
+
+                    }
+                } else {
+                    // put teacher code here //
+                }
+
+            }
+        }catch(err) {
+
+        }
+
+}
+
+exports.forgotOtp = async  (req,res)=> {
+    const role = req.query.role
+    const email = req.query.email
+    const receivedOtp = req.body.join('').trim()
+    const actualOtp = givenOtp.toString().trim()
+
+    try {
+
+        if(role=='student') {
+            const student = await studentModel.findOne({ email });
+
+            if(!student) {
+                return  res.status(400).json({success:false, message:'userdetails not found'})
+            }else if (receivedOtp != actualOtp){
+                return res.status(400).json({ msg: 'Invalid OTP' });
+
+            }else {
+                return res.status(200).json({ msg: 'Otp verification successfull' });
+            }
+
+        }
+
+    }catch(err) {
+    console.log(err);
+    }
+   
+   
+}
+
+
+exports.changePassword = async (req,res)=> {
+
+    const {password,confirmpassword} = req.body
+    const {email, role} = req.query
+
+    try {
+        
+        const passwordRegex = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)(?!.* ).{8,16}$/;
+
+        if(password.trim=='' || confirmpassword.trim()=='' ) {
+            return res.status(400).json({success:false, message:'All fields are mandatory'})
+
+        }else if (!passwordRegex.test(password) || !passwordRegex.test(confirmpassword)) {
+
+            return res.status(400).json({success:false, message:'Invalid passsword format'})
+
+        } else if (confirmpassword != password) {
+
+            return res.status(400).json({success:false, message:'Plaese confirm your password correctly'})
+
+        }else {
+
+            if(role=='student') {
+
+                const student = await studentModel.findOne({email}) 
+
+                    if (!student) {
+                        return res.status(400).json({ success:false, message: 'User not found' });
+
+
+                    } else {
+                        const salting = await bcrypt.genSalt(10)    
+                        const hashedPassword = await bcrypt.hash(password,salting)
+                        await studentModel.updateOne({email:email}, {$set:{password:hashedPassword}})
+                        return res.status(200).json({success:true, message:'Pasword changed successfully'})
+                    }
+
+                } // add teacher's code here
+            }
+
+        }catch(err) {
+            console.log('Password changing failed',err);
+
+    }
+    }
+
+
+
+
+
+
+
+
+
+
 
 
