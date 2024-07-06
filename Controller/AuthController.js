@@ -137,7 +137,6 @@ exports.studentLogin = async (req, res) => {
 
             // If passwords do not match, respond with an error
             if (!passwordMatch) {
-                console.log('here');
                 return res.status(400).json({ message: "Incorrect password" });
             } else {
                 const payload = {
@@ -280,17 +279,43 @@ exports.adminLogin = (req, res) => {
     }
 };
 
-exports.teacherLogin = (req,res) => {
+exports.teacherLogin = async (req , res) => {
+
     const {email, password} = req.body
 
-    if(email.trim()=='' || password.trim()=='') {
-        res.status(400).json({ success: false, message: 'All fields are mandatory' });
+    try {
 
-    }else {
-        console.log('Done');
-    }
+        if(email.trim()=='' || password.trim()=='') {
 
-}
+            return res.status(400).json({ success:false, message: 'All fields are mandatory' });
+
+         }else {
+
+            const teacher = await teacherDataModel.findOne({email}) 
+
+            if(!teacher) {
+                return res.status(400).json({ success:false, message: 'user not found' });
+
+            }else {
+                const passwordMatch = await bcrypt.compare(password,teacher.password) 
+
+                    if(!passwordMatch) {
+                        return res.status(400).json({ success:false, message: 'Incorrect password' });
+
+                    }else {
+                        return res.status(200).json({ success:true, message: 'Login successfull' });
+
+                    }
+                }
+            }
+         } catch (error) {
+
+            return res.status(500).json({ success:false, message: 'server error' });
+    
+        }
+    } 
+    
+
 
 exports.verifyEmail = async (req,res)=> {
     const emailRegex =/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
