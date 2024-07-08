@@ -190,7 +190,6 @@ exports.studentOtp = async (req, res) => {
                 return res.status(200).json({ msg: 'OTP verified successfully' });
             } catch (err) {
                 // Log error and return server error response if update fails
-                console.log(err, 'Verified field update failed');
                 return res.status(500).json({ msg: 'Server error' });
             }
         }
@@ -215,7 +214,6 @@ exports.studentOtp = async (req, res) => {
                 return res.status(200).json({ msg: 'OTP verified successfully' });
             } catch (err) {
                 // Log error and return server error response if update fails
-                console.log(err, 'Verified field update failed');
                 return res.status(500).json({ msg: 'Server error' });
             }
         }
@@ -223,7 +221,6 @@ exports.studentOtp = async (req, res) => {
         
     } catch (err) {
         // Log error and return server error response if email lookup fails
-        console.log(err, 'Email lookup failed');
         return res.status(500).json({ msg: 'Server error'});
     }
 };
@@ -265,7 +262,6 @@ exports.adminLogin = (req, res) => {
 
         // Check if the secretkey matches the stored secret key
         else if (secretkey.trim() !== process.env.secretkey) {
-            console.log('Incorrect secret key');
             return res.status(400).json({ success: false, message: 'You have entered the incorrect secretkey' });
         }
 
@@ -318,22 +314,41 @@ exports.teacherLogin = async (req , res) => {
 
 
 exports.verifyEmail = async (req,res)=> {
-    const emailRegex =/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
     const {email} = req.body
     const {role}= req.query
+    const emailRegex =/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
  
         try {
-
+            
             if(email.trim()==='') {
-              return  res.status(400).json({success:false, message:'Plaese enter your email'})
-
+                
+                return  res.status(400).json({success:false, message:'Plaese enter your email'})
+                
             }else if(!emailRegex.test(email)) {
+                
                 return  res.status(400).json({success:false, message:'Invalid email format'})
-
+                
             }else {
+                
+                
                 if(role=='student') {
+                    
                     const student = await studentModel.findOne({email})
                     if(!student) {
+                        
+                        return  res.status(400).json({success:false, message:'userdetails not found'})
+                        
+                    }else {
+                        
+                        givenOtp = mailOtp.otp
+                        otpMailer(givenOtp, email)
+                        return res.status(200).json({ success: true, message:'Email verified successfully', email,role});
+                    }
+                } else if(role=='teacher'){
+
+                    const teacher= await teacherDataModel.findOne({email})
+
+                    if(!teacher) {
                         return  res.status(400).json({success:false, message:'userdetails not found'})
 
                     }else {
@@ -342,13 +357,14 @@ exports.verifyEmail = async (req,res)=> {
                         return res.status(200).json({ success: true, message:'Email verified successfully', email,role});
 
                     }
-                } else {
-                    // put teacher code here //
+                } else  {
+                    return  res.status(400).json({success:false, message:'userdetails not found'})
+
                 }
 
             }
         }catch(err) {
-
+            return res.status(500).json({ message: 'server error' });
         }
 
 }
@@ -370,13 +386,27 @@ exports.forgotOtp = async  (req,res)=> {
                 return res.status(400).json({ msg: 'Invalid OTP' });
 
             }else {
-                return res.status(200).json({ msg: 'Otp verification successfull' });
+                return res.status(200).json({ success:false, message: 'Otp verification successfull' });
             }
 
+        }else if(role==='teacher') {
+            const teacher = await teacherDataModel.findOne({email})
+            
+
+            if(!teacher) {
+             return  res.status(400).json({success:false, message:'userdetails not found'})
+
+            } else if (receivedOtp != actualOtp){
+                return res.status(400).json({ msg: 'Invalid OTP' });
+
+            }else {
+                return res.status(200).json({ success:false, message: 'Otp verification successfull' });
+            }
         }
 
     }catch(err) {
-    console.log(err);
+                return res.status(500).json({ message: 'server error' });
+
     }
    
    
@@ -420,14 +450,30 @@ exports.changePassword = async (req,res)=> {
                         return res.status(200).json({success:true, message:'Pasword changed successfully'})
                     }
 
-                } // add teacher's code here
-            }
+                } else if(role=='teacher') {
+                    const teacher = await teacherDataModel.findOne({email})
 
-        }catch(err) {
-            console.log('Password changing failed',err);
+                    if(!teacher) {
+                    return res.status(400).json({ success:false, message: 'User not found' });
 
-    }
-    }
+                    }else {
+                        const salting = await bcrypt.genSalt(10)
+                        const hashedPassword = await bcrypt.hash(password,salting)
+                        await teacherDataModel.updateOne({email}, {$set:{password:hashedPassword}})
+                     return res.status(200).json({ success:false, message: '' });
+
+                    }
+                }else {
+                            return res.status(500).json({ message: 'server error'});
+                }
+
+        }
+
+    }  catch(err) {
+        return res.status(500).json({ message: 'server error' });
+
+    } 
+}
 
 
 
