@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt'); // Import bcrypt library for password hashing
 const jwt = require('jsonwebtoken')
-const mailOtp = require('./Middlewares/mailotp')
+const mailOtp = require('../Middlewares/mailotp')
 const otpMailer = require('../Utilities/otpmailer')
 const studentModel = require('../Models/studentDetails');
 const teacherDataModel = require('../Models/teacherDetails');
@@ -8,6 +8,7 @@ let givenOtp = ''
 
 // Student Signup Function
 exports.studentSignup = async (req, res) => {
+    
     // Extract fields from the request body
     const { name, email, phone, qualification, password, confirmpassword, role} = req.body;
     
@@ -104,6 +105,7 @@ exports.teacherSignup = async (req, res) => {
             password: hashedPassword
         });
 
+        // sending otp through nodemailer
         givenOtp = mailOtp.otp
         otpMailer(givenOtp, email)
 
@@ -167,7 +169,7 @@ exports.studentOtp = async (req, res) => {
     const actualOtp = givenOtp.toString().trim(); // Assuming `givenOtp` is defined elsewhere
 
     try {
-
+        // classifying the data based on the role
         if (role=='student') {
 
             // Find student by email
